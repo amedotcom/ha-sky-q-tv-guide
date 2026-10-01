@@ -1,0 +1,99 @@
+# =============================================================================
+# Sky Q TV Guide for Home Assistant - YOUR DECODERS
+# https://github.com/amedeorutigliano/ha-sky-q-tv-guide
+#
+# This is the only file you have to edit. Add one block per Sky Q decoder
+# (main box or Sky Q Mini). Each block creates a sensor with the list of the
+# channels that are on that decoder (the guide shows exactly those channels):
+#   state      = number of channels
+#   attributes = media_player, host, registrazioni, raggiungibile (reachable),
+#                aggiornato (last update), canali (["number|name|type|format|sid", ...])
+#
+# In each block change the values marked with  <-- :
+#   1. entity_id / media_player : the media_player entity created by the Sky Q
+#                                 integration for that decoder (twice)
+#   2. host                     : the IP address of the decoder (give the decoders
+#                                 a fixed IP / DHCP reservation)
+#   3. registrazioni            : true ONLY for the main Sky Q box with the hard
+#                                 disk (recordings are booked there, also from the
+#                                 Sky Q Mini dashboards); false for Sky Q Mini boxes
+#   4. name                     : "<media player name> canali": the sensor becomes
+#                                 sensor.<media player object id>_canali
+#                                 (e.g. media_player.sky_q_soggiorno ->
+#                                 sensor.sky_q_soggiorno_canali). The card finds the
+#                                 sensor automatically through its media_player
+#                                 attribute, so the name is only a convention.
+#   5. unique_id                : any unique id
+#
+# The first block defines some YAML anchors (&...) that the other blocks reuse
+# (*...): keep the first block first, copy the SECOND block for more decoders.
+#
+# The lists are refreshed at Home Assistant start, every 30 minutes, when the
+# decoder is turned on and on demand (script.sky_q_aggiorna_lista_canali / the
+# refresh button of the card). If the decoder does not answer, the last valid
+# list is kept.
+# =============================================================================
+sky_epg_decoders:
+  template:
+    # ---------------- Decoder 1: Sky Q main box (with hard disk) ----------------
+    - triggers:
+        - trigger: state
+          entity_id: media_player.sky_q_soggiorno               # <-- 1. your Sky Q media player
+          from: ["off", "standby", "unavailable"]
+        - &sky_epg_all_avvio { trigger: homeassistant, event: start }
+        - &sky_epg_ogni_30_minuti { trigger: time_pattern, minutes: "/30" }
+        - &sky_epg_a_richiesta { trigger: event, event_type: sky_epg_aggiorna_canali }
+      actions:
+        - variables:
+            media_player: media_player.sky_q_soggiorno          # <-- 1. same media player
+            host: 192.168.1.50                                  # <-- 2. decoder IP address
+            registrazioni: true                                 # <-- 3. true = this box has the hard disk
+            risposta: {}
+        - &sky_epg_leggi_lista
+          action: rest_command.sky_epg_lista_canali
+          data:
+            host: "{{ host }}"
+          response_variable: risposta
+          continue_on_error: true
+      sensor:
+        - name: Sky Q soggiorno canali                          # <-- 4. "<media player name> canali"
+          unique_id: sky_epg_canali_sky_q_soggiorno             # <-- 5. any unique id
+          <<: &sky_epg_sensore_canali
+            icon: mdi:format-list-numbered
+            unit_of_measurement: canali
+            state: >
+              {% from 'sky_epg.jinja' import sky_epg_numero %}
+              {{ sky_epg_numero(risposta, this.state) }}
+            attributes:
+              media_player: "{{ media_player }}"
+              host: "{{ host }}"
+              registrazioni: "{{ registrazioni | default(false) }}"
+              raggiungibile: >
+                {% from 'sky_epg.jinja' import sky_epg_valida %}
+                {{ sky_epg_valida(risposta) == 'si' }}
+              aggiornato: >
+                {% from 'sky_epg.jinja' import sky_epg_aggiornato %}
+                {{ sky_epg_aggiornato(risposta, this.attributes.aggiornato | default(none)) }}
+              canali: >
+                {% from 'sky_epg.jinja' import sky_epg_canali %}
+                {{ sky_epg_canali(risposta, this.attributes.canali | default([])) }}
+
+    # ---------------- Decoder 2: Sky Q Mini (copy this block for more) ----------------
+    - triggers:
+        - trigger: state
+          entity_id: media_player.sky_q_camera                  # <-- 1.
+          from: ["off", "standby", "unavailable"]
+        - *sky_epg_all_avvio
+        - *sky_epg_ogni_30_minuti
+        - *sky_epg_a_richiesta
+      actions:
+        - variables:
+            media_player: media_player.sky_q_camera             # <-- 1.
+            host: 192.168.1.51                                  # <-- 2.
+            registrazioni: false                                # <-- 3.
+            risposta: {}
+        - *sky_epg_leggi_lista
+      sensor:
+        - name: Sky Q camera canali                             # <-- 4.
+          unique_id: sky_epg_canali_sky_q_camera                # <-- 5.
+          <<: *sky_epg_sensore_canali

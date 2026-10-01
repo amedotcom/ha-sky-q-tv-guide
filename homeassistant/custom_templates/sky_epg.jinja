@@ -1,0 +1,109 @@
+{#- Sky Q TV Guide for Home Assistant - shared template macros
+    https://github.com/amedeorutigliano/ha-sky-q-tv-guide
+
+    Channel lists (sensors in packages/sky_epg_decoders.yaml):
+      risposta   = response_variable of rest_command.sky_epg_lista_canali
+      precedente = current value of the sensor (this.state / this.attributes.canali)
+    If the decoder does not answer, or answers with an empty list, the previous
+    value is kept. -#}
+
+{%- macro sky_epg_valida(risposta) -%}
+{%- set c = risposta.content if risposta is mapping and (risposta.status | default(0)) == 200 else none -%}
+{{- 'si' if c is mapping and (c.services | default([]) | count) > 0 else 'no' -}}
+{%- endmacro -%}
+
+{%- macro sky_epg_numero(risposta, precedente) -%}
+{%- if sky_epg_valida(risposta) == 'si' -%}
+{{- risposta.content.services | count -}}
+{%- else -%}
+{{- precedente | int(0) -}}
+{%- endif -%}
+{%- endmacro -%}
+
+{#- Compact list: "number|name|service type|format|sid"
+    (service type: DSAT, DTT, DTT-SWAPPED, OFTA; format: sd, hd, uhd, au = radio) -#}
+{%- macro sky_epg_canali(risposta, precedente) -%}
+{%- if sky_epg_valida(risposta) == 'si' -%}
+{%- set ns = namespace(l=[]) -%}
+{%- for s in risposta.content.services -%}
+{%- set ns.l = ns.l + [[s.c | default('') | string | trim, s.t | default('') | string | trim | replace('|', '/'), s.servicetype | default(''), s.sf | default(''), s.sid | default('') | string] | join('|')] -%}
+{%- endfor -%}
+{{- ns.l -}}
+{%- else -%}
+{{- precedente if precedente is list else [] -}}
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro sky_epg_aggiornato(risposta, precedente) -%}
+{{- now().isoformat() if sky_epg_valida(risposta) == 'si' else (precedente if precedente is string else none) -}}
+{%- endmacro -%}
+
+{#- ---- TV guide (Sky schedule) ---- -#}
+
+{#- Sky sids ("DSAT" Sky satellite channels and "DTT-SWAPPED" channels, no radio)
+    present in the channel lists of all the decoders: every sensor that has the
+    attributes "canali" and "media_player" (packages/sky_epg_decoders.yaml). -#}
+{%- macro sky_epg_sids() -%}
+{%- set ns = namespace(s=[]) -%}
+{%- for st in states.sensor | selectattr('attributes.canali', 'defined') | selectattr('attributes.media_player', 'defined') -%}
+{%- for x in st.attributes.canali if x is string -%}
+{%- set p = x.split('|') -%}
+{%- if p | count > 4 and p[2] in ['DSAT', 'DTT-SWAPPED'] and p[3] != 'au' and p[4] and p[4] not in ns.s -%}
+{%- set ns.s = ns.s + [p[4]] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endfor -%}
+{{- ns.s -}}
+{%- endmacro -%}
+
+{#- Adds to "precedenti" the events of a rest_command.sky_epg_palinsesto response
+    that overlap the window [inizio, fine] (epoch seconds).
+    Compact event: [start epoch, duration s, title, short description, eid, flags]
+    eid   = Sky event id (used to book a recording);
+    flags = 1: can be recorded, 2: can be recorded as a series. -#}
+{%- macro sky_epg_eventi(risposta, precedenti, inizio, fine) -%}
+{%- set ns = namespace(e=(precedenti if precedenti is list else []), st=[]) -%}
+{%- for x in ns.e -%}{%- set ns.st = ns.st + [x[0]] -%}{%- endfor -%}
+{%- if risposta is mapping and (risposta.status | default(0)) == 200 and risposta.content is mapping -%}
+{%- set sched = risposta.content.schedule | default([]) -%}
+{%- for ev in (sched[0].events | default([])) if sched | count > 0 -%}
+{%- if ev.st is number and ev.d is number and ev.st + ev.d > inizio and ev.st < fine and ev.st not in ns.st -%}
+{%- set desc = (ev.sy | default('') | string | regex_replace('^St\\d+ (Ep\\d+ )?Puntata del [0-9/]+ - ', ''))[:100] -%}
+{%- set fl = (1 if ev.canb | default(false) else 0) + (2 if ev.canl | default(false) else 0) -%}
+{%- set ns.e = ns.e + [[ev.st, ev.d, ev.t | default('') | string, desc, ev.eid | default('') | string, fl]] -%}
+{%- set ns.st = ns.st + [ev.st] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{{- ns.e | sort(attribute='0') -}}
+{%- endmacro -%}
+
+{#- ---- Recordings (main box with hard disk, packages/sky_epg_registrazioni.yaml) ---- -#}
+
+{#- IP address of the decoder that records: the channel list sensor with
+    registrazioni: true (packages/sky_epg_decoders.yaml). Empty if none. -#}
+{%- macro sky_epg_host_registrazioni() -%}
+{{- states.sensor | selectattr('attributes.registrazioni', 'eq', true) | selectattr('attributes.host', 'defined')
+    | map(attribute='attributes.host') | first | default('', true) -}}
+{%- endmacro -%}
+
+{#- Scheduled or in-progress recordings from a rest_command.sky_epg_decoder_leggi
+    response (path "pvr/?limit=1000&offset=0").
+    Item: [pvrid, eid, start epoch, duration s, title, channel, series linked 0/1, status, series id] -#}
+{%- macro sky_epg_programmate(risposta) -%}
+{%- set c = risposta.content if risposta is mapping and (risposta.status | default(0)) == 200 else none -%}
+{%- set ns = namespace(l=[]) -%}
+{%- if c is mapping -%}
+{%- for r in c.pvrItems | default([]) if r.status | default('') in ['SCHEDULED', 'RECORDING'] -%}
+{%- set ns.l = ns.l + [[r.pvrid | default('') | string, r.oeid | default('') | string, r.st | default(0), r.schd | default(0),
+    r.t | default('') | string, r.c | default('') | string, 1 if r.link | default(false) else 0,
+    r.status, r.seriesuuid | default('') | string]] -%}
+{%- endfor -%}
+{%- endif -%}
+{{- ns.l | sort(attribute='2') -}}
+{%- endmacro -%}
+
+{%- macro sky_epg_pvr_valida(risposta) -%}
+{%- set c = risposta.content if risposta is mapping and (risposta.status | default(0)) == 200 else none -%}
+{{- 'si' if c is mapping and c.pvrItems is defined else 'no' -}}
+{%- endmacro -%}

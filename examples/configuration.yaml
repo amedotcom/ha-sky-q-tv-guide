@@ -1,0 +1,12 @@
+# Minimal configuration.yaml addition needed by Sky Q TV Guide.
+# Each file in <config>/packages/ starts with the name of its package
+# (sky_epg:, sky_epg_decoders:, sky_epg_registrazioni:), so the folder is
+# included with !include_dir_merge_named.
+homeassistant:
+  packages: !include_dir_merge_named packages/
+
+# Optional: hide the "Cannot connect to host <ip>:9006" errors of a decoder that is
+# often switched off at the mains (this hides ALL rest_command errors).
+# logger:
+#   logs:
+#     homeassistant.components.rest_command: critical

@@ -1,0 +1,34 @@
+# Example dashboard: one full-screen (panel) view per Sky Q decoder.
+#
+# Settings -> Dashboards -> Add dashboard -> "New dashboard from scratch",
+# open it, then  ⋮ -> Edit dashboard -> ⋮ -> Raw configuration editor,
+# paste this text and replace the media_player entities with yours.
+title: Sky TV guide
+views:
+  - title: Living room
+    path: living-room
+    icon: mdi:sofa
+    type: panel
+    cards:
+      - type: custom:sky-epg-card
+        media_player: media_player.sky_q_living_room
+
+  - title: Kitchen
+    path: kitchen
+    icon: mdi:silverware-fork-knife
+    type: panel
+    cards:
+      - type: custom:sky-epg-card
+        media_player: media_player.sky_q_kitchen
+        filter: guide          # start with the channels that have a schedule
+
+  - title: Bedroom
+    path: bedroom
+    icon: mdi:bed
+    type: panel
+    cards:
+      - type: custom:sky-epg-card
+        media_player: media_player.sky_q_bedroom
+        language: en           # auto (default) | it | en
+        controls: true         # rewind / play-pause / fast-forward
+        height: 75vh           # height of the guide area
