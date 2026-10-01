@@ -479,7 +479,6 @@ only the day and the public Sky channel id.
   documented the local API of the decoders.
 - [EPG Card](https://github.com/yohaybn/lovelace-epg-card) by yohaybn, which draws the
   guide rows.
-- Developed by [Amedeo Rutigliano](https://github.com/amedeorutigliano).
 
 ## License and disclaimer
 
