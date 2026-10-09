@@ -66,7 +66,8 @@
 {%- for x in ns.e -%}{%- set ns.st = ns.st + [x[0]] -%}{%- endfor -%}
 {%- if risposta is mapping and (risposta.status | default(0)) == 200 and risposta.content is mapping -%}
 {%- set sched = risposta.content.schedule | default([]) -%}
-{%- for ev in (sched[0].events | default([])) if sched | count > 0 -%}
+{%- set evs = (sched[0].events | default([])) if sched is list and sched | count > 0 and sched[0] is mapping else [] -%}
+{%- for ev in evs -%}
 {%- if ev.st is number and ev.d is number and ev.st + ev.d > inizio and ev.st < fine and ev.st not in ns.st -%}
 {%- set desc = (ev.sy | default('') | string | regex_replace('^St\\d+ (Ep\\d+ )?Puntata del [0-9/]+ - ', ''))[:100] -%}
 {%- set fl = (1 if ev.canb | default(false) else 0) + (2 if ev.canl | default(false) else 0) -%}
@@ -76,6 +77,25 @@
 {%- endfor -%}
 {%- endif -%}
 {{- ns.e | sort(attribute='0') -}}
+{%- endmacro -%}
+
+{#- Full synopsis of ONE event of a rest_command.sky_epg_palinsesto response, found
+    by event id (eid) or, without eid, by start time (inizio, epoch seconds).
+    The guide keeps only the first 100 characters of each synopsis; Sky itself
+    sends at most about 230 characters. Same prefix removal as sky_epg_eventi.
+    Empty string if the event is not in the response. -#}
+{%- macro sky_epg_descrizione(risposta, eid, inizio) -%}
+{%- set ns = namespace(d='') -%}
+{%- if risposta is mapping and (risposta.status | default(0)) == 200 and risposta.content is mapping -%}
+{%- set sched = risposta.content.schedule | default([]) -%}
+{%- set evs = (sched[0].events | default([])) if sched is list and sched | count > 0 and sched[0] is mapping else [] -%}
+{%- for ev in evs -%}
+{%- if not ns.d and ((eid and (ev.eid | default('') | string) == eid) or (not eid and ev.st == inizio)) -%}
+{%- set ns.d = ev.sy | default('') | string | regex_replace('^St\\d+ (Ep\\d+ )?Puntata del [0-9/]+ - ', '') -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{{- ns.d -}}
 {%- endmacro -%}
 
 {#- ---- Recordings (main box with hard disk, packages/sky_epg_registrazioni.yaml) ---- -#}
