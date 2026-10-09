@@ -3,7 +3,7 @@
 All notable changes to this project. Versions refer to the card
 (`dist/sky-epg-card.js`); the backend files are released together with it.
 
-## Unreleased
+## 3.1.0 – 2026-10-09
 
 ### Card
 
@@ -22,7 +22,6 @@ All notable changes to this project. Versions refer to the card
   the first 100 characters.
 - The guide download no longer stops with a template error when Sky answers with an
   empty schedule (`"schedule": []`) for a channel and day.
-
 - Decoders in deep standby are no longer queried. Sky Q boxes sleep for a few hours
   every night and the Sky Q integration reports them as `unavailable`: the channel list
   sensors and the recordings sensor now skip their requests in that state, which

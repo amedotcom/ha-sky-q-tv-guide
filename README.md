@@ -208,9 +208,7 @@ Card" → Download*). If HACS does not list it, add
 
    You can use the *File editor* or *Studio Code Server* add-on, Samba, SSH, etc.
    Download the files with *Code → Download ZIP* or from the
-   [latest release](https://github.com/amedeorutigliano/ha-sky-q-tv-guide/releases/latest)
-   (release 3.0.0 does not have the `packages_include_dir_named/` folder yet: use the
-   ZIP if you need it).
+   [latest release](https://github.com/amedeorutigliano/ha-sky-q-tv-guide/releases/latest).
 
 3. **Describe your decoders** in `packages/sky_epg_decoders.yaml`: one block per
    decoder with its `media_player` entity, its IP address and whether it is the box
@@ -240,7 +238,7 @@ Card" → Download*). If HACS does not list it, add
 
 1. Copy `dist/sky-epg-card.js` to `<config>/www/sky-epg-card.js`.
 2. *Settings → Dashboards → ⋮ → Resources → Add resource*:
-   URL `/local/sky-epg-card.js?v=3.0.0`, type *JavaScript module*. Change the `v=`
+   URL `/local/sky-epg-card.js?v=3.1.0`, type *JavaScript module*. Change the `v=`
    number every time you update the file, so browsers load the new version.
 
 ### 5. The dashboard

@@ -29,7 +29,7 @@
  * others are created/removed while scrolling. A single scroll container with a
  * sticky time bar keeps scrolling smooth on phones too.
  */
-const SKY_EPG_VERSION = "3.0.0";
+const SKY_EPG_VERSION = "3.1.0";
 
 const SKY_EPG_FILTRI = ["tutti", "sky", "dtt", "sat", "radio", "guida"];
 
