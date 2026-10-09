@@ -122,6 +122,7 @@ flowchart LR
 | Core package | `homeassistant/packages/sky_epg.yaml` | REST commands for the decoders and the Sky EPG service, the guide download script, the 8 guide sensors, the tune and refresh scripts, recorder exclusions. **Do not edit.** |
 | Your decoders | `homeassistant/packages/sky_epg_decoders.yaml` | One block per decoder: creates the channel list sensor of that decoder. **The only file you edit.** |
 | Recordings (optional) | `homeassistant/packages/sky_epg_registrazioni.yaml` | Recordings sensor and the record / cancel script, using the decoder marked `registrazioni: true`. **Do not edit.** |
+| Same packages for `!include_dir_named` | `homeassistant/packages_include_dir_named/` | The same three files for configurations that include packages with `!include_dir_named` (see [Backend](#3-backend-packages-and-macros)). |
 | Macros | `homeassistant/custom_templates/sky_epg.jinja` | Template logic shared by the packages (parsing of the decoder and EPG answers). |
 | Card | `dist/sky-epg-card.js` | The Lovelace card `custom:sky-epg-card`. |
 
@@ -142,7 +143,7 @@ More details in [docs/architecture.md](docs/architecture.md).
 | Sky Q decoders on **Sky Italia** | Main box (tested with an ES340 "Titan") and/or Sky Q Mini (tested with EM150), reachable from Home Assistant on TCP port **9006**. Give them a **fixed IP** (DHCP reservation). The schedule service and the logos are those of Sky Italia: other countries are not supported (see [Limitations](#limitations)). |
 | [Sky Q integration](https://github.com/RogerSelwyn/Home_Assistant_SkyQ_MediaPlayer) | `skyq` custom integration (HACS). Provides the `media_player` entities used for tuning, the current channel and the playback controls. Tested with v3.0.2. |
 | [EPG Card](https://github.com/yohaybn/lovelace-epg-card) | Lovelace card (HACS) that draws the rows of the guide. Only the card is needed, **not** the HomeAssistant-EPG integration. |
-| Packages enabled | `homeassistant: packages: !include_dir_merge_named packages/` in `configuration.yaml` (see below). |
+| Packages enabled | `homeassistant: packages:` in `configuration.yaml`, with either `!include_dir_merge_named packages/` or `!include_dir_named packages`: both are supported, each with its own copy of the files (see below). |
 | Internet access from Home Assistant | HTTP to `atlantis.epgsky.com` (schedule). The browsers showing the dashboard load the logos from `it.imageservice.sky.com`. |
 
 ## Installation
@@ -164,36 +165,52 @@ Card" → Download*). If HACS does not list it, add
 
 ### 3. Backend (packages and macros)
 
-1. **Enable packages** in `configuration.yaml`, if you have not done so already:
+1. **Check how your `configuration.yaml` includes packages** (the `packages:` line
+   under `homeassistant:`) and pick the folder of this repository that matches it:
+
+   | Your `configuration.yaml` | Copy the package files from |
+   | --- | --- |
+   | `packages: !include_dir_merge_named packages/` | `homeassistant/packages/` |
+   | `packages: !include_dir_named packages` | `homeassistant/packages_include_dir_named/` |
+   | no `packages:` line yet | add the lines below, then use `homeassistant/packages/` |
 
    ```yaml
    homeassistant:
      packages: !include_dir_merge_named packages/
    ```
 
-   > If your configuration already uses `packages: !include_dir_named packages`
-   > (one package per file, without the package name at the top), either switch to
-   > `!include_dir_merge_named` and add the package name as the first line of your
-   > existing package files, or remove the first line of each of the three files of
-   > this project (`sky_epg:`, `sky_epg_decoders:`, `sky_epg_registrazioni:`) and
-   > un-indent the rest by two spaces.
+   The two folders contain the same packages written in the two formats Home
+   Assistant expects. With `!include_dir_merge_named` each file starts with the name
+   of its package (`sky_epg:`, `sky_epg_decoders:`, `sky_epg_registrazioni:`); with
+   `!include_dir_named` the package name is the file name, so those files have no such
+   line. **Do not change your existing `packages:` line** to suit this project: your
+   other package files are written for the format you already use. Copy the folder
+   that matches it instead. The wrong combination makes the configuration check fail
+   with *"Setup of package 'sky_epg' failed: Integration 'sky_epg' not found"* or
+   *"Setup of package 'rest_command' failed: Integration 'sky_epg_…' not found"*.
 
-2. **Copy the files** of the `homeassistant/` folder of this repository into your
-   configuration folder (the one with `configuration.yaml`), keeping the structure:
+2. **Copy the files** into your configuration folder (the one with
+   `configuration.yaml`), keeping this structure:
 
    ```text
    <config>/
    ├── custom_templates/
-   │   └── sky_epg.jinja
-   └── packages/
+   │   └── sky_epg.jinja                  <- from homeassistant/custom_templates/
+   └── packages/                          <- from the folder chosen in step 1
        ├── sky_epg.yaml
        ├── sky_epg_decoders.yaml          <- edit this one
        └── sky_epg_registrazioni.yaml     <- optional (recordings)
    ```
 
+   The file names must stay as they are (with `!include_dir_named` they are the
+   package names). If your `packages/` folder has subfolders, the files can also go
+   in one of them, e.g. `packages/sky_q_tv_guide/`.
+
    You can use the *File editor* or *Studio Code Server* add-on, Samba, SSH, etc.
-   Download the files from the [latest release](https://github.com/amedeorutigliano/ha-sky-q-tv-guide/releases/latest)
-   or with *Code → Download ZIP*.
+   Download the files with *Code → Download ZIP* or from the
+   [latest release](https://github.com/amedeorutigliano/ha-sky-q-tv-guide/releases/latest)
+   (release 3.0.0 does not have the `packages_include_dir_named/` folder yet: use the
+   ZIP if you need it).
 
 3. **Describe your decoders** in `packages/sky_epg_decoders.yaml`: one block per
    decoder with its `media_player` entity, its IP address and whether it is the box
@@ -269,10 +286,18 @@ sky_epg_decoders:
     - triggers:
         - trigger: state
           entity_id: media_player.sky_q_living_room       # <-- 1. your Sky Q media player
-          from: ["off", "standby", "unavailable"]
+          from: ["off", "standby"]
         - &sky_epg_all_avvio { trigger: homeassistant, event: start }
         - &sky_epg_ogni_30_minuti { trigger: time_pattern, minutes: "/30" }
         - &sky_epg_a_richiesta { trigger: event, event_type: sky_epg_aggiorna_canali }
+      conditions:
+        # Skip the request while the Sky Q integration reports the decoder as
+        # unavailable (deep standby, usually at night): it could only fail.
+        - condition: not
+          conditions:
+            - condition: state
+              entity_id: media_player.sky_q_living_room   # <-- 1. same media player
+              state: unavailable
       actions:
         - variables:
             media_player: media_player.sky_q_living_room  # <-- 1. same media player
@@ -292,10 +317,16 @@ sky_epg_decoders:
     - triggers:
         - trigger: state
           entity_id: media_player.sky_q_bedroom           # <-- 1.
-          from: ["off", "standby", "unavailable"]
+          from: ["off", "standby"]
         - *sky_epg_all_avvio
         - *sky_epg_ogni_30_minuti
         - *sky_epg_a_richiesta
+      conditions:
+        - condition: not
+          conditions:
+            - condition: state
+              entity_id: media_player.sky_q_bedroom       # <-- 1.
+              state: unavailable
       actions:
         - variables:
             media_player: media_player.sky_q_bedroom      # <-- 1.
@@ -311,7 +342,7 @@ sky_epg_decoders:
 
 | Value | Meaning |
 | --- | --- |
-| `entity_id` / `media_player` | The `media_player` entity of the decoder created by the Sky Q integration (it appears twice in each block). |
+| `entity_id` / `media_player` | The `media_player` entity of the decoder created by the Sky Q integration (it appears three times in each block: trigger, condition and variables). While the integration reports it as `unavailable` (deep standby, usually for a few hours every night) the decoder is not queried. |
 | `host` | IP address of the decoder. |
 | `registrazioni` | `true` only for the **main box with the hard disk**: recordings are booked on it (also from the Sky Q Mini dashboards) and `sensor.sky_q_registrazioni` reads its recordings. `false` for Sky Q Mini boxes. If no decoder is `true`, the recording features are disabled. |
 | `name` | Name of the sensor. Using `"<media player name> canali"` gives `sensor.<media player object id>_canali` (e.g. `media_player.sky_q_bedroom` → `sensor.sky_q_bedroom_canali`), which is what the card expects by default. The card also finds the sensor automatically through its `media_player` attribute, so the name is just a convention. |
@@ -411,7 +442,9 @@ data:
 - **Card**: HACS shows the update; install it and reload the browser / app. Manual
   installs: replace `www/sky-epg-card.js` and bump the `?v=` of the resource.
 - **Backend**: replace `packages/sky_epg.yaml`, `packages/sky_epg_registrazioni.yaml`
-  and `custom_templates/sky_epg.jinja` with the new versions. **Do not overwrite your
+  and `custom_templates/sky_epg.jinja` with the new versions, taking the package files
+  from the same folder you installed from (`homeassistant/packages/` or
+  `homeassistant/packages_include_dir_named/`). **Do not overwrite your
   `sky_epg_decoders.yaml`** (compare it with the new example only if the
   [changelog](CHANGELOG.md) says so). Then *Developer tools → YAML → reload* "Template
   entities", "Scripts", "RESTful commands" and run the action
@@ -429,9 +462,10 @@ problems:
 | Custom element doesn't exist: `sky-epg-card` | The card resource is missing or the browser cache is old: check *Settings → Dashboards → Resources*, then reload (on the app: close and reopen). |
 | Channels without schedule | Only the channels known to the Sky EPG service have a schedule. Digital terrestrial and free channels reuse the schedule of the Sky channel with the same name; for different names use the `alias` option. |
 | Guide sensors at 0 | Home Assistant cannot reach `atlantis.epgsky.com` over HTTP, or the channel list sensors are still empty. Check the log for `rest_command` errors. |
+| Configuration check: *"Setup of package 'sky_epg' failed: Integration 'sky_epg' not found"*, or *"Setup of package 'rest_command' / 'recorder' / 'script' failed: Integration '…' not found"* | The package files do not match the `packages:` line of `configuration.yaml`: `homeassistant/packages/` is for `!include_dir_merge_named`, `homeassistant/packages_include_dir_named/` is for `!include_dir_named`. Replace the three files with the matching ones (keep your decoder blocks). |
 | *"Template … does not export the requested name"* in the log | `sky_epg.jinja` was updated but not reloaded: run `homeassistant.reload_custom_templates` or restart. |
 | Recording buttons missing | No decoder has `registrazioni: true`, or `sensor.sky_q_registrazioni` has no `host` attribute yet (it is updated every 10 minutes). |
-| Errors `Cannot connect to host …:9006` every 30 minutes | A decoder is switched off at the mains or unreachable. The last valid channel list is kept; the error disappears when the decoder is back. |
+| Errors `Cannot connect to host …:9006` every 30 minutes | A decoder is switched off at the mains or unreachable while the Sky Q integration still reports it as available. The last valid channel list is kept; the error disappears when the decoder is back. Decoders in deep standby (`media_player` `unavailable`, usually at night) are not queried at all. If you see these errors at night, compare your `sky_epg_decoders.yaml` with the current example: older versions had no `conditions:` block. |
 | Recorder warnings about attributes larger than 16384 bytes | The recorder exclusions of `sky_epg.yaml` are applied only after a restart. |
 
 ## Limitations
@@ -456,9 +490,9 @@ problems:
 
 | Who | Connects to | When |
 | --- | --- | --- |
-| Home Assistant | each decoder, `http://<ip>:9006/as/services` | start, every 30 min, decoder turned on, refresh |
+| Home Assistant | each decoder, `http://<ip>:9006/as/services` | start, every 30 min, decoder turned on, refresh (never while the decoder is `unavailable`) |
 | Home Assistant | `http://atlantis.epgsky.com/as/schedule/<day>/<sid>` (one request per channel and day, ~200–400 per hour) | start, every hour, refresh |
-| Home Assistant | main box, `http://<ip>:9006/as/pvr/...` | every 10 min and on recording actions |
+| Home Assistant | main box, `http://<ip>:9006/as/pvr/...` | every 10 min (never while the main box is `unavailable`) and on recording actions |
 | Your browser / app | `https://it.imageservice.sky.com/logo/...` | when logos are displayed (cached by the browser) |
 
 No account, token or personal data is sent anywhere; the schedule requests contain

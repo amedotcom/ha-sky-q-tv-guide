@@ -152,7 +152,9 @@ sky_epg_registrazioni:
 
   template:
     # Scheduled / in-progress recordings on the decoder with the hard disk.
-    # Not updated while no decoder has "registrazioni: true".
+    # Not updated while no decoder has "registrazioni: true", nor while the Sky Q
+    # integration reports that decoder as unavailable (deep standby, usually at
+    # night): the requests could only fail.
     - triggers:
         - trigger: homeassistant
           event: start
@@ -165,7 +167,8 @@ sky_epg_registrazioni:
       conditions:
         - >-
           {% from 'sky_epg.jinja' import sky_epg_host_registrazioni %}
-          {{ sky_epg_host_registrazioni() | length > 0 }}
+          {% set mp = states.sensor | selectattr('attributes.registrazioni', 'eq', true) | map(attribute='attributes.media_player') | first | default('', true) %}
+          {{ sky_epg_host_registrazioni() | length > 0 and not (mp and is_state(mp, 'unavailable')) }}
       actions:
         - variables:
             host: >-

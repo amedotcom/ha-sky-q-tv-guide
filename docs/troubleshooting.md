@@ -21,10 +21,22 @@ in a browser: you should see a long JSON text with `"services"`. If not:
 - `media_player` and `host` are those of your decoder;
 - `registrazioni: true` only on the box with the hard disk.
 
-If the sensor does not exist, the package was not loaded: check that
-`configuration.yaml` contains `packages: !include_dir_merge_named packages/`, run
-*Developer tools → YAML → Check configuration* and look for `sky_epg` in
-*Settings → System → Logs*. If the sensor exists but is `0` / `raggiungibile: false`,
+If the sensor does not exist, the package was not loaded. Run *Developer tools → YAML
+→ Check configuration* and look for `sky_epg` in *Settings → System → Logs*, then check
+that the package files match the `packages:` line of `configuration.yaml`:
+
+| `configuration.yaml` | Files to use |
+| --- | --- |
+| `packages: !include_dir_merge_named packages/` | `homeassistant/packages/` (each file starts with `sky_epg:`, `sky_epg_decoders:`, `sky_epg_registrazioni:`) |
+| `packages: !include_dir_named packages` | `homeassistant/packages_include_dir_named/` (no such first line) |
+
+With the wrong combination the check fails with *"Setup of package 'sky_epg' failed:
+Integration 'sky_epg' not found"* (files with the first line, `!include_dir_named`) or
+*"Setup of package 'rest_command' failed: Integration 'sky_epg_…' not found"* and
+similar messages for `recorder` and `script` (files without it,
+`!include_dir_merge_named`). Do not change the `packages:` line, which your other
+packages rely on: replace the three files with the matching ones, keeping your
+decoder blocks in `sky_epg_decoders.yaml`. If the sensor exists but is `0` / `raggiungibile: false`,
 see step 1, then press the refresh button of the card (or run
 `script.sky_q_aggiorna_lista_canali`).
 
@@ -88,6 +100,13 @@ If the log shows *"template 'sky_epg.jinja' … does not export the requested na
 
 - `Cannot connect to host <ip>:9006` every 30 minutes: a decoder is unreachable (often
   a Sky Q Mini switched off at the mains). The last valid channel list is kept.
+- The same errors (and `Error executing script ... Client error occurred when calling
+  resource "http://<ip>:9006/..."`) every night, plus `Status code 503` when the
+  decoders wake up: the Sky Q boxes are in deep standby and the Sky Q integration
+  reports them as `unavailable`. Current versions skip those decoders; if you installed
+  an older version, add the `conditions:` block of the current example to each block
+  of your `sky_epg_decoders.yaml`, remove `"unavailable"` from its `from:` list and
+  update `sky_epg_registrazioni.yaml`.
 - `State attributes for sensor.sky_epg_guida_tv_N exceed maximum size`: the recorder
   exclusions are applied after a restart of Home Assistant.
 

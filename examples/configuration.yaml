@@ -1,7 +1,12 @@
 # Minimal configuration.yaml addition needed by Sky Q TV Guide.
-# Each file in <config>/packages/ starts with the name of its package
-# (sky_epg:, sky_epg_decoders:, sky_epg_registrazioni:), so the folder is
-# included with !include_dir_merge_named.
+#
+# If your configuration.yaml already has a "packages:" line, keep it and copy the
+# package files that match it:
+#   packages: !include_dir_merge_named packages/  -> homeassistant/packages/
+#   packages: !include_dir_named packages         -> homeassistant/packages_include_dir_named/
+#
+# Otherwise add these lines and use homeassistant/packages/ (each file starts with
+# the name of its package: sky_epg:, sky_epg_decoders:, sky_epg_registrazioni:).
 homeassistant:
   packages: !include_dir_merge_named packages/
 

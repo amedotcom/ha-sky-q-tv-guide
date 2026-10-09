@@ -11,7 +11,7 @@
 #
 # In each block change the values marked with  <-- :
 #   1. entity_id / media_player : the media_player entity created by the Sky Q
-#                                 integration for that decoder (twice)
+#                                 integration for that decoder (three times)
 #   2. host                     : the IP address of the decoder (give the decoders
 #                                 a fixed IP / DHCP reservation)
 #   3. registrazioni            : true ONLY for the main Sky Q box with the hard
@@ -31,7 +31,9 @@
 # The lists are refreshed at Home Assistant start, every 30 minutes, when the
 # decoder is turned on and on demand (script.sky_q_aggiorna_lista_canali / the
 # refresh button of the card). If the decoder does not answer, the last valid
-# list is kept.
+# list is kept. Nothing is requested while the Sky Q integration reports the
+# decoder as unavailable (deep standby, usually for a few hours every night):
+# the request could only fail and fill the log with errors.
 # =============================================================================
 sky_epg_decoders:
   template:
@@ -39,10 +41,18 @@ sky_epg_decoders:
     - triggers:
         - trigger: state
           entity_id: media_player.sky_q_soggiorno               # <-- 1. your Sky Q media player
-          from: ["off", "standby", "unavailable"]
+          from: ["off", "standby"]
         - &sky_epg_all_avvio { trigger: homeassistant, event: start }
         - &sky_epg_ogni_30_minuti { trigger: time_pattern, minutes: "/30" }
         - &sky_epg_a_richiesta { trigger: event, event_type: sky_epg_aggiorna_canali }
+      conditions:
+        # Skip the request while the Sky Q integration reports the decoder as
+        # unavailable (deep standby, usually at night): it could only fail.
+        - condition: not
+          conditions:
+            - condition: state
+              entity_id: media_player.sky_q_soggiorno           # <-- 1. same media player
+              state: unavailable
       actions:
         - variables:
             media_player: media_player.sky_q_soggiorno          # <-- 1. same media player
@@ -82,10 +92,16 @@ sky_epg_decoders:
     - triggers:
         - trigger: state
           entity_id: media_player.sky_q_camera                  # <-- 1.
-          from: ["off", "standby", "unavailable"]
+          from: ["off", "standby"]
         - *sky_epg_all_avvio
         - *sky_epg_ogni_30_minuti
         - *sky_epg_a_richiesta
+      conditions:
+        - condition: not
+          conditions:
+            - condition: state
+              entity_id: media_player.sky_q_camera              # <-- 1.
+              state: unavailable
       actions:
         - variables:
             media_player: media_player.sky_q_camera             # <-- 1.
