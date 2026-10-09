@@ -141,7 +141,7 @@ Headers sent by the package: `x-skyott-territory: IT`, `x-skyott-provider: SKY`,
 | --- | --- |
 | `st`, `d` | Start (epoch s) and duration (s). |
 | `eid` | Event id: used to book a recording (`bookrecording?eid=`). |
-| `t`, `sy` | Title and synopsis (the package strips a leading "St.. Ep.. Puntata del .. - " and keeps 100 characters). |
+| `t`, `sy` | Title and synopsis. Sky sends at most about 230 characters of synopsis (longer ones end with "..."). The package strips a leading "St.. Ep.. Puntata del .. - "; the guide keeps 100 characters and `script.sky_epg_descrizione` returns the whole synopsis of one programme. |
 | `canb` | The programme can be recorded. |
 | `canl` | The programme can be recorded as a series. |
 

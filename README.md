@@ -373,6 +373,7 @@ Options can be written in English or in Italian (the names in brackets).
 | `tune_script` (`script`) | `script.sky_q_sintonizza_canale` | Script used to tune. |
 | `refresh_script` | `script.sky_q_aggiorna_lista_canali` | Script of the refresh button. |
 | `recording_script` (`script_registrazione`) | `script.sky_q_registrazione` | Script used for recordings. |
+| `description_script` (`script_descrizione`) | `script.sky_epg_descrizione` | Script that reads the full description of a programme when its menu is opened. |
 
 Example:
 
@@ -392,7 +393,7 @@ alias:
 | Action | Result |
 | --- | --- |
 | **Tap a channel or a programme** | Tunes the decoder to that channel (turning it on if it is in standby). The row is highlighted immediately. |
-| **Long-press a programme** (right-click on a computer) | Opens the programme menu: time, description, *Tune*, *Record the programme*, *Record the series*, *Cancel the recording*, *Cancel the series* (the options depend on what Sky allows for that programme). |
+| **Long-press a programme** (right-click on a computer) | Opens the programme menu: time, full description, *Tune*, *Record the programme*, *Record the series*, *Cancel the recording*, *Cancel the series* (the options depend on what Sky allows for that programme). |
 | **⏪ ⏯ ⏩** | Rewind, play / pause, fast forward on the decoder (press again to change speed, as on the remote). After ⏪ / ⏩ the middle button returns to normal speed. Disabled while the decoder is off. |
 | **Search box** | Filters by channel name or number; *Enter* tunes the only (or exactly matching) channel. |
 | **Filter chips** | All, Sky, digital terrestrial, free satellite, radio, channels with guide. |
@@ -414,6 +415,7 @@ schedule were last updated, the number of scheduled recordings and the disk usag
 | `script.sky_q_aggiorna_lista_canali` | script | Reads channel lists and schedule again (fires `sky_epg_aggiorna_canali`). |
 | `script.sky_q_registrazione` | script | Recordings. Fields: `azione` (`registra`, `registra_serie`, `annulla`, `annulla_serie`), `eid` (event id, to record), `pvrid` (recording id, to cancel). |
 | `script.sky_epg_scarica_guida` | script | Internal: downloads one slice of the schedule and returns it as response. |
+| `script.sky_epg_descrizione` | script | Internal: returns the full description of one programme (`{descrizione: …}`). Fields: `sid`, `eid` (event id), `inizio` (start, epoch seconds). Used by the card when a programme menu is opened. |
 | `rest_command.sky_epg_lista_canali`, `sky_epg_palinsesto`, `sky_epg_decoder_leggi`, `sky_epg_decoder_azione` | REST commands | Internal. |
 | `sky_epg_aggiorna_canali` | event | Refreshes channel lists, guide and recordings. |
 | `sky_epg_aggiorna_registrazioni` | event | Refreshes the recordings sensor. |
