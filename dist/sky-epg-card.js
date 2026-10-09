@@ -37,8 +37,12 @@ const SKY_EPG_FILTRI = ["tutti", "sky", "dtt", "sat", "radio", "guida"];
 const SKY_EPG_OPZIONI = {
   language: "lingua", filter: "filtro", height: "altezza", controls: "comandi", channels: "canali",
   guide: "guida", recordings: "registrazioni", logos: "loghi", tune_script: "script",
-  recording_script: "script_registrazione",
+  recording_script: "script_registrazione", description_script: "script_descrizione",
 };
+
+// The guide sensors keep the first 100 characters of each description: a longer
+// one is read in full (script.sky_epg_descrizione) when the programme menu opens.
+const SKY_EPG_DESC_MAX = 100;
 const SKY_EPG_FILTRI_EN = { all: "tutti", guide: "guida", terrestrial: "dtt", satellite: "sat" };
 
 const SKY_EPG_I18N = {
@@ -322,6 +326,7 @@ class SkyEpgCard extends HTMLElement {
     this._chunks = new Map();
     this._recMap = new Map(); // eid -> { pvrid, link, stato }: recordings on the decoder
     this._recPend = new Map(); // eid -> { booked, link, t }: bookings waiting for the decoder to confirm
+    this._descCache = new Map(); // eid (or sid|start) -> full description read from Sky
     this._ready = false;
     this._built = false;
   }
@@ -341,6 +346,7 @@ class SkyEpgCard extends HTMLElement {
       refresh_script: "script.sky_q_aggiorna_lista_canali",
       registrazioni: "sensor.sky_q_registrazioni",
       script_registrazione: "script.sky_q_registrazione",
+      script_descrizione: "script.sky_epg_descrizione",
       filtro: "tutti",
       row_height: 64,
       hour_width: 180,
@@ -1539,9 +1545,39 @@ class SkyEpgCard extends HTMLElement {
     if (!ch || !p) return;
     if (el && el._hideTooltip) el._hideTooltip();
     const ev = p._ev;
-    this._menu = { ch, p, ev };
+    this._menu = { ch, p, ev, desc: "" };
     this._renderMenu();
     this._el.menuBg.hidden = false;
+    this._caricaDescrizione(this._menu);
+  }
+
+  // The guide keeps only the first SKY_EPG_DESC_MAX characters of a description:
+  // when it may be longer, ask script.sky_epg_descrizione for the full text and
+  // redraw the menu if it is still open. Without the script (backend not updated)
+  // or on errors the short text stays.
+  _caricaDescrizione(m) {
+    const { ch, p, ev } = m;
+    if (!p.desc || p.desc.length < SKY_EPG_DESC_MAX || !ch.gsid) return;
+    const eid = ev[4] || "";
+    const key = eid || `${ch.gsid}|${ev[0]}`;
+    const mostra = (d) => {
+      if (this._menu !== m || !d || d.length <= p.desc.length) return;
+      m.desc = d;
+      this._renderMenu();
+    };
+    if (this._descCache.has(key)) return mostra(this._descCache.get(key));
+    const [domain, service] = String(this._config.script_descrizione || "").split(".");
+    if (!domain || !service || !this._hass.services?.[domain]?.[service]) return;
+    this._hass
+      .callService(domain, service, { sid: String(ch.gsid), eid, inizio: ev[0] }, undefined, false, true)
+      .then((r) => {
+        const d = r && r.response && r.response.descrizione;
+        if (typeof d !== "string" || !d.trim()) return;
+        if (this._descCache.size >= 200) this._descCache.delete(this._descCache.keys().next().value);
+        this._descCache.set(key, d.trim());
+        mostra(d.trim());
+      })
+      .catch(() => {});
   }
 
   _renderMenu() {
@@ -1583,11 +1619,13 @@ class SkyEpgCard extends HTMLElement {
       if (!(fl & 3) && ev.length > 5) note = this._t("not_recordable");
     }
     b.push(btn("chiudi", "mdi:close", this._t("close"), "chiudi"));
+    // full text if already read from Sky; otherwise the guide text, with "…" when cut
+    const desc = m.desc || (p.desc && p.desc.length >= SKY_EPG_DESC_MAX ? `${p.desc.trimEnd()}…` : p.desc);
     this._el.menu.innerHTML = `
       <div class="m-ch">${skyEpgEsc(`${ch.num} · ${ch.name}`)}</div>
       <div class="m-t">${skyEpgEsc(p.title)}</div>
       <div class="m-time">${skyEpgEsc(quando)}</div>
-      ${p.desc ? `<div class="m-desc">${skyEpgEsc(p.desc)}</div>` : ""}
+      ${desc ? `<div class="m-desc">${skyEpgEsc(desc)}</div>` : ""}
       ${rec ? `<div class="m-rec">${skyEpgEsc(rec)}</div>` : ""}
       ${note ? `<div class="m-note">${skyEpgEsc(note)}</div>` : ""}
       <div class="m-btns">${b.join("")}</div>`;

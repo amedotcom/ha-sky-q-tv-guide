@@ -13,7 +13,9 @@
 #                                        decoders and the Sky Q integration use)
 # - script.sky_epg_scarica_guida       : downloads the next N hours of schedule
 #                                        for a slice of the channels
-# - sensor.sky_epg_guida_tv_1..8       : the 24-hour guide, split in 8 slices that
+# - script.sky_epg_descrizione         : full description of one programme
+#                                        (the guide keeps 100 characters)
+# - sensor.sky_epg_guida_tv_1..8      : the 24-hour guide, split in 8 slices that
 #                                        are downloaded in parallel every hour
 # - script.sky_q_sintonizza_canale     : tunes a decoder to a channel number
 # - script.sky_q_aggiorna_lista_canali : re-reads channel lists and guide now
@@ -136,6 +138,73 @@ sky_epg:
         - variables:
             risultato: "{{ {'guida': guida, 'ore': n_ore} }}"
         - stop: Palinsesto scaricato
+          response_variable: risultato
+
+    # Full description of ONE programme, returned as the script response:
+    #   { descrizione: "..." }   (empty if the programme is not found)
+    # The guide sensors keep only the first 100 characters of each description;
+    # the card calls this script when the menu of a programme is opened. Sky itself
+    # sends at most about 230 characters.
+    sky_epg_descrizione:
+      alias: Sky EPG - descrizione programma
+      description: >-
+        Returns the full description of one programme from the Sky EPG service. Used by
+        sky-epg-card when the menu of a programme is opened (the guide sensors keep only
+        the first 100 characters).
+      icon: mdi:text-box-outline
+      mode: parallel
+      max: 10
+      trace:
+        stored_traces: 1
+      fields:
+        sid:
+          description: Sky channel id (sid) of the guide
+          required: true
+          example: "899"
+          selector:
+            text:
+              multiline: false
+        eid:
+          description: Sky event id of the programme
+          example: E383-116
+          selector:
+            text:
+              multiline: false
+        inizio:
+          description: Start of the programme (epoch seconds)
+          required: true
+          example: 1790942700
+          selector:
+            number: { min: 0, max: 9999999999, mode: box }
+      sequence:
+        - variables:
+            t0: "{{ inizio | int(0) }}"
+            id_evento: "{{ eid | default('') | string | trim }}"
+            # the file of one day covers from the early morning until about 04:00 of
+            # the next day: look in the file of the start day, then in the day before
+            giorni: >
+              {{ [t0 | timestamp_custom('%Y%m%d'), (t0 - 86400) | timestamp_custom('%Y%m%d')] }}
+            descrizione: ""
+        - repeat:
+            for_each: "{{ giorni }}"
+            sequence:
+              - condition: template
+                value_template: "{{ not descrizione }}"
+              - variables:
+                  risposta: {}
+              - action: rest_command.sky_epg_palinsesto
+                data:
+                  giorno: "{{ repeat.item }}"
+                  sid: "{{ sid | string | trim }}"
+                response_variable: risposta
+                continue_on_error: true
+              - variables:
+                  descrizione: >
+                    {% from 'sky_epg.jinja' import sky_epg_descrizione %}
+                    {{ sky_epg_descrizione(risposta, id_evento, t0) }}
+        - variables:
+            risultato: "{{ {'descrizione': descrizione | string | trim} }}"
+        - stop: Descrizione letta
           response_variable: risultato
 
     # Tunes a decoder to a channel number. Used by the card (tap on a channel).

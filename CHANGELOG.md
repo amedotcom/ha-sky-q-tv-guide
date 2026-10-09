@@ -5,7 +5,23 @@ All notable changes to this project. Versions refer to the card
 
 ## Unreleased
 
+### Card
+
+- The programme menu shows the full description (#2). The guide sensors keep only
+  the first 100 characters of each description, so that they stay small; when the
+  menu of a programme with a longer description is opened, the card reads the whole
+  text from Sky through the new `script.sky_epg_descrizione` and shows it as soon as
+  it arrives (until then the short text ends with "…"). Sky itself sends at most about
+  230 characters. New option `description_script` (`script_descrizione`).
+
 ### Backend
+
+- New `script.sky_epg_descrizione` (`sky_epg.yaml`) and macro `sky_epg_descrizione`
+  (`custom_templates/sky_epg.jinja`), used by the card for the full description.
+  **Replace `sky_epg.yaml` and `sky_epg.jinja`**; without them the card keeps showing
+  the first 100 characters.
+- The guide download no longer stops with a template error when Sky answers with an
+  empty schedule (`"schedule": []`) for a channel and day.
 
 - Decoders in deep standby are no longer queried. Sky Q boxes sleep for a few hours
   every night and the Sky Q integration reports them as `unavailable`: the channel list
