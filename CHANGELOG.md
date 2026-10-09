@@ -3,6 +3,26 @@
 All notable changes to this project. Versions refer to the card
 (`dist/sky-epg-card.js`); the backend files are released together with it.
 
+## Unreleased
+
+### Backend
+
+- Decoders in deep standby are no longer queried. Sky Q boxes sleep for a few hours
+  every night and the Sky Q integration reports them as `unavailable`: the channel list
+  sensors and the recordings sensor now skip their requests in that state, which
+  removes dozens of `Cannot connect to host …:9006` / `Error executing script` errors
+  per night. Waking up from deep standby no longer triggers a refresh (the decoder
+  answers `503` for a while): the next 30-minute refresh reads the list.
+  **Update `sky_epg_decoders.yaml` by hand**: in each block add the `conditions:`
+  section of the new example and remove `"unavailable"` from the `from:` list of the
+  state trigger. Replace `sky_epg_registrazioni.yaml`.
+- Configurations that include packages with `packages: !include_dir_named packages`
+  are supported: `homeassistant/packages_include_dir_named/` contains the same three
+  packages in that format (package name = file name, no first line). The README
+  explains which folder to use; there is no need to change the `packages:` line.
+  The folder is generated from `homeassistant/packages/` by
+  `tools/make_include_dir_named.py`, and a workflow checks that they stay in sync.
+
 ## 3.0.0 – 2026-10-01
 
 First public release.
