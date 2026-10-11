@@ -102,7 +102,7 @@ the same (normalized) name, or the one chosen with the `alias` option.
 ### Download
 
 The Sky EPG service returns the schedule of **one channel for one day** per request
-(`GET http://atlantis.epgsky.com/as/schedule/YYYYMMDD/SID`; requests for several
+(`GET https://atlantis.epgsky.com/as/schedule/YYYYMMDD/SID`; requests for several
 channels are rejected). A 24-hour window needs one or two days per channel, so a full
 refresh is 200–400 requests.
 

@@ -104,7 +104,10 @@ deletes every `SCHEDULED` item with the same `seriesuuid`.
 
 ## Sky EPG service
 
-`GET http://atlantis.epgsky.com/as/schedule/<YYYYMMDD>/<sid>`
+`GET https://atlantis.epgsky.com/as/schedule/<YYYYMMDD>/<sid>`
+
+The service answers on plain `http://` too (pyskyqremote uses it); the package uses
+HTTPS.
 
 Headers sent by the package: `x-skyott-territory: IT`, `x-skyott-provider: SKY`,
 `x-skyott-proposition: SKYQ`.

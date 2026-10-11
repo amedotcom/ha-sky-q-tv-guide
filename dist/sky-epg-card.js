@@ -1,6 +1,6 @@
 /*
  * Sky Q TV Guide card (sky-epg-card) for Home Assistant
- * https://github.com/amedeorutigliano/ha-sky-q-tv-guide
+ * https://github.com/amedotcom/ha-sky-q-tv-guide
  *
  * Full TV guide of the channels that are on a Sky Q decoder (Sky Italia), with
  * the Sky schedule of the next 24 hours. Tap a channel or a programme to tune
@@ -1678,7 +1678,7 @@ if (!customElements.get("sky-epg-card")) {
     name: "Sky Q TV Guide",
     description: "TV guide of the channels on a Sky Q decoder (Sky Italia): tap to tune, long-press to record, playback controls.",
     preview: false,
-    documentationURL: "https://github.com/amedeorutigliano/ha-sky-q-tv-guide",
+    documentationURL: "https://github.com/amedotcom/ha-sky-q-tv-guide",
   });
   console.info(`%c SKY-EPG-CARD %c ${SKY_EPG_VERSION} `, "background:#0b5;color:#fff", "background:#333;color:#fff");
 }

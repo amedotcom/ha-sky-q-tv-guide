@@ -1,6 +1,6 @@
 # =============================================================================
 # Sky Q TV Guide for Home Assistant - YOUR DECODERS
-# https://github.com/amedeorutigliano/ha-sky-q-tv-guide
+# https://github.com/amedotcom/ha-sky-q-tv-guide
 #
 # This is the only file you have to edit. Add one block per Sky Q decoder
 # (main box or Sky Q Mini). Each block creates a sensor with the list of the
