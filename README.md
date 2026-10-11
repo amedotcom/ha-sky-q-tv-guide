@@ -208,7 +208,7 @@ Card" → Download*). If HACS does not list it, add
 
    You can use the *File editor* or *Studio Code Server* add-on, Samba, SSH, etc.
    Download the files with *Code → Download ZIP* or from the
-   [latest release](https://github.com/amedeorutigliano/ha-sky-q-tv-guide/releases/latest).
+   [latest release](https://github.com/amedotcom/ha-sky-q-tv-guide/releases/latest).
 
 3. **Describe your decoders** in `packages/sky_epg_decoders.yaml`: one block per
    decoder with its `media_player` entity, its IP address and whether it is the box
@@ -228,7 +228,7 @@ Card" → Download*). If HACS does not list it, add
 **With HACS (recommended)**
 
 1. *HACS → ⋮ (top right) → Custom repositories*.
-2. Repository: `https://github.com/amedeorutigliano/ha-sky-q-tv-guide`, type
+2. Repository: `https://github.com/amedotcom/ha-sky-q-tv-guide`, type
    **Dashboard**, *Add*.
 3. Search **Sky Q TV Guide** in HACS and *Download*. HACS adds the resource
    `/hacsfiles/ha-sky-q-tv-guide/sky-epg-card.js`.

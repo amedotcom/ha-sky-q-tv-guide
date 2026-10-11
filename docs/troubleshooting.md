@@ -112,7 +112,7 @@ If the log shows *"template 'sky_epg.jinja' … does not export the requested na
 
 ## Getting help
 
-Open an [issue](https://github.com/amedeorutigliano/ha-sky-q-tv-guide/issues) with:
+Open an [issue](https://github.com/amedotcom/ha-sky-q-tv-guide/issues) with:
 Home Assistant version, decoder models, the state and attributes of the sensors
 (without the long `canali` / `guida` lists), the relevant log lines and the browser
 console errors (F12 → Console) if the problem is in the card.
