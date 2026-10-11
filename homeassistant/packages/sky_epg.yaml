@@ -40,7 +40,7 @@ sky_epg:
     # Schedule of ONE channel (sid) for ONE day (giorno = YYYYMMDD).
     # The service rejects requests for several channels at once.
     sky_epg_palinsesto:
-      url: "http://atlantis.epgsky.com/as/schedule/{{ giorno }}/{{ sid }}"
+      url: "https://atlantis.epgsky.com/as/schedule/{{ giorno }}/{{ sid }}"
       method: get
       headers:
         x-skyott-territory: IT

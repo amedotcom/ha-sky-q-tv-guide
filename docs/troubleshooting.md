@@ -47,7 +47,7 @@ see step 1, then press the refresh button of the card (or run
 
 - the channel list sensors must be filled first (step 2), then run
   `script.sky_q_aggiorna_lista_canali`;
-- Home Assistant must reach `http://atlantis.epgsky.com` (plain HTTP, port 80): check
+- Home Assistant must reach `https://atlantis.epgsky.com` (HTTPS, port 443): check
   firewalls / DNS filters;
 - look at the traces of `script.sky_epg_scarica_guida` (*Settings → Automations &
   scenes → Scripts → Sky EPG - scarica palinsesto → Traces*).

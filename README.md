@@ -144,7 +144,7 @@ More details in [docs/architecture.md](docs/architecture.md).
 | [Sky Q integration](https://github.com/RogerSelwyn/Home_Assistant_SkyQ_MediaPlayer) | `skyq` custom integration (HACS). Provides the `media_player` entities used for tuning, the current channel and the playback controls. Tested with v3.0.2. |
 | [EPG Card](https://github.com/yohaybn/lovelace-epg-card) | Lovelace card (HACS) that draws the rows of the guide. Only the card is needed, **not** the HomeAssistant-EPG integration. |
 | Packages enabled | `homeassistant: packages:` in `configuration.yaml`, with either `!include_dir_merge_named packages/` or `!include_dir_named packages`: both are supported, each with its own copy of the files (see below). |
-| Internet access from Home Assistant | HTTP to `atlantis.epgsky.com` (schedule). The browsers showing the dashboard load the logos from `it.imageservice.sky.com`. |
+| Internet access from Home Assistant | HTTPS to `atlantis.epgsky.com` (schedule). The browsers showing the dashboard load the logos from `it.imageservice.sky.com`. |
 
 ## Installation
 
@@ -461,7 +461,7 @@ problems:
 | The card shows *"The EPG Card resource (epg-card.js) is not loaded"* | Install the EPG Card from HACS and reload the browser. |
 | Custom element doesn't exist: `sky-epg-card` | The card resource is missing or the browser cache is old: check *Settings → Dashboards → Resources*, then reload (on the app: close and reopen). |
 | Channels without schedule | Only the channels known to the Sky EPG service have a schedule. Digital terrestrial and free channels reuse the schedule of the Sky channel with the same name; for different names use the `alias` option. |
-| Guide sensors at 0 | Home Assistant cannot reach `atlantis.epgsky.com` over HTTP, or the channel list sensors are still empty. Check the log for `rest_command` errors. |
+| Guide sensors at 0 | Home Assistant cannot reach `atlantis.epgsky.com` over HTTPS, or the channel list sensors are still empty. Check the log for `rest_command` errors. |
 | Configuration check: *"Setup of package 'sky_epg' failed: Integration 'sky_epg' not found"*, or *"Setup of package 'rest_command' / 'recorder' / 'script' failed: Integration '…' not found"* | The package files do not match the `packages:` line of `configuration.yaml`: `homeassistant/packages/` is for `!include_dir_merge_named`, `homeassistant/packages_include_dir_named/` is for `!include_dir_named`. Replace the three files with the matching ones (keep your decoder blocks). |
 | *"Template … does not export the requested name"* in the log | `sky_epg.jinja` was updated but not reloaded: run `homeassistant.reload_custom_templates` or restart. |
 | Recording buttons missing | No decoder has `registrazioni: true`, or `sensor.sky_q_registrazioni` has no `host` attribute yet (it is updated every 10 minutes). |
@@ -491,7 +491,7 @@ problems:
 | Who | Connects to | When |
 | --- | --- | --- |
 | Home Assistant | each decoder, `http://<ip>:9006/as/services` | start, every 30 min, decoder turned on, refresh (never while the decoder is `unavailable`) |
-| Home Assistant | `http://atlantis.epgsky.com/as/schedule/<day>/<sid>` (one request per channel and day, ~200–400 per hour) | start, every hour, refresh |
+| Home Assistant | `https://atlantis.epgsky.com/as/schedule/<day>/<sid>` (one request per channel and day, ~200–400 per hour) | start, every hour, refresh |
 | Home Assistant | main box, `http://<ip>:9006/as/pvr/...` | every 10 min (never while the main box is `unavailable`) and on recording actions |
 | Your browser / app | `https://it.imageservice.sky.com/logo/...` | when logos are displayed (cached by the browser) |
 
