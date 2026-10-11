@@ -3,6 +3,23 @@
 All notable changes to this project. Versions refer to the card
 (`dist/sky-epg-card.js`); the backend files are released together with it.
 
+## Unreleased
+
+### Backend
+
+- The Sky schedule is downloaded over HTTPS (`https://atlantis.epgsky.com`).
+- `script.sky_q_registrazione` accepts only valid event and recording ids
+  (letters, digits, `-`, `_`): they are part of the URL sent to the decoder.
+- Right after the installation the guide is downloaded as soon as the channel lists
+  have been read (up to 1 minute), instead of at the next hour.
+
+**Replace `sky_epg.yaml` and `sky_epg_registrazioni.yaml`.**
+
+### Other
+
+- Links updated to the new address of the repository,
+  `https://github.com/amedotcom/ha-sky-q-tv-guide` (the old one redirects).
+
 ## 3.1.0 – 2026-10-09
 
 ### Card
