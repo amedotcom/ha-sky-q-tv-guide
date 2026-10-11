@@ -99,15 +99,17 @@ sky_epg_registrazioni:
           then:
             - stop: Invalid action
               error: true
+        # The ids go into the URL of the decoder: letters, digits, "-" and "_" only
+        # (e.g. E300-5e, P29038072)
         - if:
-            - "{{ azione in ['registra', 'registra_serie'] and not id_evento }}"
+            - "{{ azione in ['registra', 'registra_serie'] and not (id_evento | regex_match('^[A-Za-z0-9_-]{1,64}$')) }}"
           then:
-            - stop: Missing event id (eid)
+            - stop: Missing or invalid event id (eid)
               error: true
         - if:
-            - "{{ azione in ['annulla', 'annulla_serie'] and not id_reg }}"
+            - "{{ azione in ['annulla', 'annulla_serie'] and not (id_reg | regex_match('^[A-Za-z0-9_-]{1,64}$')) }}"
           then:
-            - stop: Missing recording id (pvrid)
+            - stop: Missing or invalid recording id (pvrid)
               error: true
         - variables:
             percorso: >-
